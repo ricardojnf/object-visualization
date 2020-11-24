@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- PAGE SETTINGS -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- PAGE FONT -->
+    <link href="https://fonts.googleapis.com/css?family=Lato" rel="stylesheet">
+    <!-- SCRIPTS -->
+    <script id="vertex-shader" type="x-shader/x-vertex">
+    attribute vec4 vPosition;
+    attribute vec4 vNormal;
+    uniform mat4 mProjection;
+    uniform mat4 mView;
+    uniform mat4 mModel;
+    varying vec4 fNormal;
+    void main(){
+        fNormal = vNormal;
+        gl_Position = mProjection * mView * mModel * vPosition;
+    }
+    </script>
+    <script id="fragment-shader" type="x-shader/x-fragment">
+    precision mediump float;
+    varying vec4 fNormal;
+    void main() {
+        gl_FragColor = fNormal;
+    }
+    </script>
+    <script type="text/javascript" src="Common/webgl-utils.js"></script>
+    <script type="text/javascript" src="Common/initShaders.js"></script>
+    <script type="text/javascript" src="Common/MV.js"></script>
+    <script type="text/javascript" src="Common/sphere.js"></script>
+    <script type="text/javascript" src="Common/cube.js"></script>
+    <script type="text/javascript" src="Common/torus.js"></script>
+    <script type="text/javascript" src="Common/cylinder.js"></script>
+    <script type="text/javascript" src="Common/bunny.js"></script>
+    <script type="text/javascript" src="Common/bunny-data.js"></script>
+    <script type="text/javascript" src="Common/superquadric.js"></script>
+    <script type="text/javascript" src="projections.js"></script>
+    <link rel="stylesheet" type="text/css" href="./style.css"/>
+</head>
+<body>
+    <title>Projections</title>
+    <canvas id="gl-canvas" width="512" height="512">
+        Oops... your browser doesn't support the HTML5 canvas element"
+    </canvas>
+
+    <div id="infos-area">
+        <ul>
+            <li>Z-Buffer: <span id="zBuffer"></span></li>
+            <li>Back Face Culling: <span id="backFaceCulling"></span></li>
+        </ul>
+    </div>
+
+    <div id="options-area">
+        <div id="views" class="main-option" style="display: block;">
+            <input id="viewOrthogonal" class="main-option-option" type="button" value="Ortogonal">
+            <input id="viewAxonometric" class="main-option-option" type="button" value="Axonométrica">
+            <input id="viewOblique" class="main-option-option" type="button" value="Oblíqua">
+            <input id="viewPerspective" class="main-option-option" type="button" value="Perspetiva">
+            <input id="viewObjects" class="main-option-option" type="button" value="Objetos">
+        </div>
+
+        <!-- ORTHOGONAL -->
+        <form id="orthogonal" class="secondary-option" style="display: none;">
+            <!--<h3>Ortogonal</h3>-->
+            <input id="orthogonalMain" type="radio" name="orthogonal"><label for="orthogonalMain">Alçado Principal</label><br>
+            <input id="orthogonalFloor" type="radio" name="orthogonal"><label for="orthogonalFloor">Planta</label><br>
+            <input id="orthogonalRight" type="radio" name="orthogonal"><label for="orthogonalRight">Alçado Lateral Direito</label>
+        </form>
+
+        <!-- AXONOMETRIC -->
+        <form id="axonometric" class="secondary-option" style="display: none;">
+            <!--<h3>Axonométrica</h3>-->
+            <!-- FREE OPTION GAMMA -->
+            <label for="axonometricFreeOptionsGamma" class="axonometricFreeOptions freeOptions">&gamma;: <span id="axonometricFreeOptionsGammaMin"></span>º</label>
+            <!-- THIS SETS THE VALUES --> <input type="range" id="axonometricFreeOptionsGamma" class="axonometricFreeOptions" value="35" min="-180" max="180" step="1">
+            <label for="axonometricFreeOptionsGamma" class="axonometricFreeOptions freeOptions"><span id="axonometricFreeOptionsGammaMax"></span>º</label>
+
+            <!-- FREE OPTION THETA -->
+            <label for="axonometricFreeOptionsTheta" class="axonometricFreeOptions freeOptions">&theta;: <span id="axonometricFreeOptionsThetaMin"></span>º</label>
+            <!-- THIS SETS THE VALUES --> <input type="range" id="axonometricFreeOptionsTheta" class="axonometricFreeOptions" value="-45" min="-180" max="180" step="1">
+            <label for="axonometricFreeOptionsTheta" class="axonometricFreeOptions freeOptions"><span id="axonometricFreeOptionsThetaMax"></span>º</label><br>
+
+            <input id="axonometricFree" type="radio" name="axonometric"><label for="axonometricFree">Livre (<span class="lowercase">&gamma;</span> = <span id="axonometricFreeGamma"></span>º, <span class="lowercase">&theta;</span> = <span id="axonometricFreeTheta"></span>º)</label><br>
+            <input id="axonometricIsometry" type="radio" name="axonometric"><label for="axonometricIsometry">Isometria (A = 30º, B = 30º)</label><br>
+            <input id="axonometricDimetry" type="radio" name="axonometric" checked><label for="axonometricDimetry">Dimetria (A = 42º, B = 7º)</label><br>
+            <input id="axonometricTrimetry" type="radio" name="axonometric"><label for="axonometricTrimetry">Trimetria (A = 54º 16', B = 23º 16')</label>
+        </form>
+
+        <!-- OBLIQUE -->
+        <form id="oblique" class="secondary-option" style="display: none;">
+            <!--<h3>Oblíqua</h3>-->
+            <!-- FREE OPTION L -->
+            <label for="obliqueFreeOptionsL" class="obliqueFreeOptions freeOptions">l: <span id="obliqueFreeOptionsLMin"></span></label>
+            <!-- THIS SETS THE VALUES --> 
+            <input type="range" id="obliqueFreeOptionsL" class="obliqueFreeOptions" value="0.5" min="0" max="1" step="0.01">
+            <label for="obliqueFreeOptionsL" class="obliqueFreeOptions freeOptions"><span id="obliqueFreeOptionsLMax"></span></label>
+
+            <!-- FREE OPTION ALPHA -->
+            <label for="obliqueFreeOptionsAlpha" class="obliqueFreeOptions freeOptions">&alpha;: <span id="obliqueFreeOptionsAlphaMin"></span>º</label>
+            <!-- THIS SETS THE VALUES --> 
+            <input type="range" id="obliqueFreeOptionsAlpha" class="obliqueFreeOptions" value="90" min="-180" max="180" step="1">
+            <label for="obliqueFreeOptionsAlpha" class="obliqueFreeOptions freeOptions"><span id="obliqueFreeOptionsAlphaMax"></span>º</label><br>
+
+            <input id="obliqueFree" type="radio" name="oblique"><label for="obliqueFree">Livre(<span class="lowercase">l</span> = <span id="obliqueFreeL"></span>, <span class="lowercase">&alpha;</span> = <span id="obliqueFreeAlpha"></span>º)</label><br>
+            <input id="obliqueKnight" type="radio" name="oblique"><label for="obliqueKnight">Cavaleira (<span class="lowercase">l</span> = 1, <span class="lowercase">&alpha;</span> = 45º)</label><br>
+            <input id="obliqueCabinet" type="radio" name="oblique"><label for="obliqueCabinet">Gabinete (<span class="lowercase">l</span> = 0.5, <span class="lowercase">&alpha;</span> = 45º)</label>
+        </form>
+
+        <!-- PERSPECTIVE -->
+        <form id="perspective" class="secondary-option" style="display: none;">
+            <!--<h3>Perspetiva</h3>-->
+            <b>Ponto de Fuga</b>: (0, 0, <span id="perspectiveFreeD">10</span>)<br><br>
+
+            <!-- FREE OPTION D -->
+            <label for="perspectiveFreeOptionsD" class="perspectiveFreeOptions freeOptions">d: <span id="perspectiveFreeOptionsDMin"></span></label>
+            <!-- THIS SETS THE VALUES --> 
+            <input type="range" id="perspectiveFreeOptionsD" class="perspectiveFreeOptions" value="2" min="2" max="20" step="1">
+            <label for="perspectiveFreeOptionsD" class="perspectiveFreeOptions freeOptions"><span id="perspectiveFreeOptionsDMax"></span></label><br>
+        </form>
+
+        <!-- OBJECTS -->
+        <form id="objects" class="secondary-option" style="display: none;">
+            <!--<h3>Objetos</h3>-->
+            <input id="objectSphere" type="radio" name="objects"><label for="objectSphere">Esfera</label><br>
+            <input id="objectCube" type="radio" name="objects" checked><label for="objectCube">Cubo</label><br>
+            <input id="objectTorus" type="radio" name="objects"><label for="objectTorus">Torus</label><br>
+            <input id="objectCylinder" type="radio" name="objects"><label for="objectCylinder">Cilindro</label><br>
+            <input id="objectBunny" type="radio" name="objects"><label for="objectBunny">Coelho</label><br>
+            <input id="objectSuperquadric" type="radio" name="objects"><label for="objectSuperquadric">Superquadric (<span class="lowercase">e1</span> = <span id="superquadricFreeE1"></span>, <span class="lowercase">e2</span> = <span id="superquadricFreeE2"></span>)</label><br>
+
+            <!-- FREE OPTION E1 -->
+            <label for="superquadricFreeOptionsE1" class="superquadricFreeOptions freeOptions">e1: <span id="superquadricFreeOptionsE1Min"></span></label>
+            <!-- THIS SETS THE VALUES --> 
+            <input type="range" id="superquadricFreeOptionsE1" class="superquadricFreeOptions" value="2.5" min="0" max="5" step="0.1">
+            <label for="superquadricFreeOptionsE1" class="superquadricFreeOptions freeOptions"><span id="superquadricFreeOptionsE1Max"></span></label>
+
+            <!-- FREE OPTION E2 -->
+            <label for="superquadricFreeOptionsE2" class="superquadricFreeOptions freeOptions">e2: <span id="superquadricFreeOptionsE2Min"></span></label>
+            <!-- THIS SETS THE VALUES --> 
+            <input type="range" id="superquadricFreeOptionsE2" class="superquadricFreeOptions" value="2.5" min="0" max="5" step="0.1">
+            <label for="superquadricFreeOptionsE2" class="superquadricFreeOptions freeOptions"><span id="superquadricFreeOptionsE2Max"></span></label><br>
+        </form>
+    </div>
+</body>
+</html>
